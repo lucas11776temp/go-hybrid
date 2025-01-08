@@ -1,0 +1,59 @@
+@font-face {
+	font-family: -futuraStd-book;
+	src: url(./../fonts/futura/FuturaStd-Book.otf);
+}
+
+@font-face {
+	font-family: -futuraStd-heavy;
+	src: url(./../fonts/futura/FuturaStd-Heavy.otf);
+}
+
+@font-face {
+	font-family: -futuraStd-light;
+	src: url(./../fonts/futura/FuturaStd-Light.otf);
+}
+
+@font-face {
+	font-family: -futuraRound;
+	src: url(./../fonts/futura/FuturaRound.ttf);
+}
+
+
+body {
+	font-family: -futuraRound !important;
+}
+
+
+.a {
+	color: #f6f9fc
+}
+
+
+/* Scroller */
+
+::-webkit-scrollbar {
+	/* width: 15px;
+	margin-right: 10px;
+	background: #eee;
+	transition: .8 all ease-in; */
+}
+
+::-webkit-scrollbar-thumb {
+	/* background: var(--default);
+	border-radius: 100px;
+	transition: .8 all ease-in;
+	height: 90vh !important; */
+}
+
+::-webkit-progress-bar {
+	/* background-color: black !important; */
+}
+
+
+body > * {
+  pointer-events: none;
+}
+
+body {
+  pointer-events: none;
+}
