@@ -38,7 +38,7 @@ type BindingArguments struct {
 	Object string `json:"object"`
 	Method string `json:"method"`
 	// Data   []reflect.Value `json:"data"`
-	Data any `json:"data"`
+	Data []any `json:"data"`
 }
 
 // type Bindings map[string]map[string]func(...[]any)
@@ -47,7 +47,12 @@ type BindingArguments struct {
 
 type BindingArg interface{}
 
-type Bindings map[string]BindingArg
+type ObjectBinding struct {
+	Object   BindingArg
+	Bindings map[string]reflect.Method
+}
+
+type Bindings map[string]ObjectBinding
 
 // type Bindings map[string]interface{}
 
@@ -156,8 +161,51 @@ func Initialization(init Configuration, setup InitializationCallback) Window {
 	return window
 }
 
+// Invalid Kind = iota
+// Bool
+// Int
+// Int8
+// Int16
+// Int32
+// Int64
+// Uint
+// Uint8
+// Uint16
+// Uint32
+// Uint64
+// Uintptr
+// Float32
+// Float64
+// Complex64
+// Complex128
+// Array
+// Chan
+// Func
+// Interface
+// Map
+// Pointer
+// Slice
+// String
+// Struct
+// UnsafePointer
+
+func GetValue(value reflect.Value) any {
+	switch value.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return value.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return value.Uint()
+	case reflect.Float32, reflect.Float64:
+		return value.Float()
+	case reflect.Bool:
+		return value.Bool()
+	default:
+		return value.String()
+	}
+}
+
 func (ctx *Window) setUpBindingEventHandler() {
-	ctx.Webview.Bind("__BINDING__", func(event string) {
+	ctx.Webview.Bind("__BINDING__", func(event string) any {
 		// var evt BindingArguments[any]
 		var evt BindingArguments
 
@@ -165,87 +213,51 @@ func (ctx *Window) setUpBindingEventHandler() {
 
 		if err != nil {
 			fmt.Println("Invalid binding arguments:", event)
-			return
+			return nil
 		}
 
-		object, ok := ctx.bindings[evt.Object]
+		objMap, ok := ctx.bindings[evt.Object]
 
 		if !ok {
 			fmt.Println("Binding to object", evt.Object, "does not exist")
-			return
+			return nil
 		}
 
-		typeOf := reflect.TypeOf(object)
+		m := objMap.Bindings[evt.Method]
 
-		fmt.Println(
-			"Name: ",
-			typeOf.Name(),
-			object,
-			typeOf.NumMethod(),
-			reflect.ValueOf(object).MethodByName("Add"),
-		)
+		re := m.Func.Call([]reflect.Value{
+			reflect.ValueOf(objMap.Object),
+		})
 
-		// fmt.Println(object)
+		vs := []any{}
 
-		// fmt.Println(object[evt.Method].Call(evt.Data))
+		for i := 0; i < len(re); i++ {
+			vs = append(vs, GetValue(re[i]))
+		}
 
-		// fmt.Println(object[evt.Method].Call([]reflect.Value{}))
+		fmt.Println("Return Values", vs)
+
+		if len(vs) > 1 {
+			return vs
+		}
+
+		return vs[0]
 	})
 }
 
-func (ctx *Window) Binding(name string, obj BindingArg) error {
-	// TODO MOVE CODE TO BINDING...
-	typeOf := reflect.TypeOf(obj)
-
-	fmt.Println("Number of methods:", typeOf.NumMethod())
-
-	for i := 0; i < typeOf.NumMethod(); i++ {
-
-		if typeOf.Method(i).Type.Kind() == reflect.Func {
-
-			fmt.Println(typeOf.Method(i).Name)
-
-			// reflect.Value
-
-			r := typeOf.Method(i).Func.Call([]reflect.Value{reflect.ValueOf(obj)})
-
-			// value :=
-
-			fmt.Println(r[0])
-		}
-
-		// fmt.Println(typeOf.Method(i).Func.Call([]reflect.Value{}))
+func (ctx *Window) Binding(name string, obj BindingArg) {
+	ctx.bindings[name] = ObjectBinding{
+		Object:   obj,
+		Bindings: make(map[string]reflect.Method),
 	}
 
-	ctx.bindings[name] = obj
+	typeOf := reflect.TypeOf(obj)
 
-	return nil
-
-	/**
-	 *
-	 *
-	 *
-	 */
-
-	// typeOf := reflect.TypeOf(&obj)
-
-	// fmt.Println(typeOf)
-
-	// // ctx.bindings[name] = obj
-
-	// ctx.bindings[name] = make(map[string]reflect.Value)
-
-	// fmt.Println(obj, typeOf.NumMethod(), reflect.ValueOf(&obj).MethodByName("Add"))
-
-	// for i := 0; i < typeOf.NumMethod(); i++ {
-	// 	method := typeOf.Method(i)
-
-	// 	fmt.Println(
-	// 		typeOf.Name(), ":", reflect.ValueOf(&obj).MethodByName(method.Name),
-	// 	)
-
-	// 	ctx.bindings[name][method.Name] = reflect.ValueOf(&obj).MethodByName(method.Name)
-	// }
+	for i := 0; i < typeOf.NumMethod(); i++ {
+		if typeOf.Method(i).Type.Kind() == reflect.Func {
+			ctx.bindings[name].Bindings[typeOf.Method(i).Name] = typeOf.Method(i)
+		}
+	}
 }
 
 func (ctx *Window) Open() {

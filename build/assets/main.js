@@ -23,18 +23,14 @@ const bind = (object, method) => {
 
 
 const Math2 = {
-  add: bind('Math2', 'Add'),
+  addition: bind('Math2', 'Addition'),
   multiple: bind('Math2', 'Multiple'),
 }
 
 document.addEventListener('click', e => {
-  // battery('The title must change ' + Math.ceil(Math.random() * 1000000));
+  const p = Math2.addition(1, 2);
 
-  console.log(Math2.add(1, 2))
+  console.log(p);
 
+  p.then(v => console.log("VALUE: ", v));
 });
-
-
-// window.battery()
-//       .then(level => console.log("System batter level is ", level))
-//       .catch(() => {})

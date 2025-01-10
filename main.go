@@ -16,8 +16,8 @@ var ui_embed embed.FS
 type Math struct {
 }
 
-func (ctx *Math) Addition() int32 {
-	return 2 + 2
+func (ctx *Math) Addition() (int32, int32) {
+	return 2 + 2, 2
 }
 
 // func (ctx *Math) Multiple() int32 {
