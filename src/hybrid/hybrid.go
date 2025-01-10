@@ -43,7 +43,11 @@ type BindingArguments struct {
 
 // type Bindings map[string]map[string]func(...[]any)
 
-type Bindings map[string]map[string]reflect.Value
+// type Bindings map[string]map[string]reflect.Value
+
+type BindingArg interface{}
+
+type Bindings map[string]BindingArg
 
 // type Bindings map[string]interface{}
 
@@ -164,40 +168,84 @@ func (ctx *Window) setUpBindingEventHandler() {
 			return
 		}
 
-		object, ok := ctx.bindings[strings.ToUpper(evt.Object)]
+		object, ok := ctx.bindings[evt.Object]
 
 		if !ok {
 			fmt.Println("Binding to object", evt.Object, "does not exist")
 			return
 		}
 
-		fmt.Println(object)
+		typeOf := reflect.TypeOf(object)
+
+		fmt.Println(
+			"Name: ",
+			typeOf.Name(),
+			object,
+			typeOf.NumMethod(),
+			reflect.ValueOf(object).MethodByName("Add"),
+		)
+
+		// fmt.Println(object)
+
 		// fmt.Println(object[evt.Method].Call(evt.Data))
 
 		// fmt.Println(object[evt.Method].Call([]reflect.Value{}))
 	})
 }
 
-func (ctx *Window) Binding(name string, obj interface{}) {
-	typeOf := reflect.TypeOf(&obj)
+func (ctx *Window) Binding(name string, obj BindingArg) error {
+	// TODO MOVE CODE TO BINDING...
+	typeOf := reflect.TypeOf(obj)
 
-	fmt.Println(typeOf)
-
-	// ctx.bindings[name] = obj
-
-	ctx.bindings[name] = make(map[string]reflect.Value)
-
-	fmt.Println(obj, typeOf.NumMethod(), reflect.ValueOf(&obj).MethodByName("Add"))
+	fmt.Println("Number of methods:", typeOf.NumMethod())
 
 	for i := 0; i < typeOf.NumMethod(); i++ {
-		method := typeOf.Method(i)
 
-		fmt.Println(
-			typeOf.Name(), ":", reflect.ValueOf(&obj).MethodByName(method.Name),
-		)
+		if typeOf.Method(i).Type.Kind() == reflect.Func {
 
-		ctx.bindings[name][method.Name] = reflect.ValueOf(&obj).MethodByName(method.Name)
+			fmt.Println(typeOf.Method(i).Name)
+
+			// reflect.Value
+
+			r := typeOf.Method(i).Func.Call([]reflect.Value{reflect.ValueOf(obj)})
+
+			// value :=
+
+			fmt.Println(r[0])
+		}
+
+		// fmt.Println(typeOf.Method(i).Func.Call([]reflect.Value{}))
 	}
+
+	ctx.bindings[name] = obj
+
+	return nil
+
+	/**
+	 *
+	 *
+	 *
+	 */
+
+	// typeOf := reflect.TypeOf(&obj)
+
+	// fmt.Println(typeOf)
+
+	// // ctx.bindings[name] = obj
+
+	// ctx.bindings[name] = make(map[string]reflect.Value)
+
+	// fmt.Println(obj, typeOf.NumMethod(), reflect.ValueOf(&obj).MethodByName("Add"))
+
+	// for i := 0; i < typeOf.NumMethod(); i++ {
+	// 	method := typeOf.Method(i)
+
+	// 	fmt.Println(
+	// 		typeOf.Name(), ":", reflect.ValueOf(&obj).MethodByName(method.Name),
+	// 	)
+
+	// 	ctx.bindings[name][method.Name] = reflect.ValueOf(&obj).MethodByName(method.Name)
+	// }
 }
 
 func (ctx *Window) Open() {

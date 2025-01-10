@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"math"
 	"reflect"
 
 	bootstrap "test/src"
@@ -17,17 +16,17 @@ var ui_embed embed.FS
 type Math struct {
 }
 
-func (ctx *Math) Addition(a int32, b int32) int32 {
-	return a + b
+func (ctx *Math) Addition() int32 {
+	return 2 + 2
 }
 
-func (ctx *Math) Multiple(a int32, b int32) int32 {
-	return a * b
-}
+// func (ctx *Math) Multiple() int32 {
+// 	return 2 * 2
+// }
 
-func (ctx *Math) Sin(x float64) float64 {
-	return math.Sin(x)
-}
+// func (ctx *Math) Sin() float64 {
+// 	return math.Sin(2)
+// }
 
 func main() {
 	configuration := bootstrap.Configuration{
@@ -37,7 +36,20 @@ func main() {
 	}
 
 	configuration.Bootstrap(func(application bootstrap.Application) {
-		application.Bind("Math2", Math{})
+
+		// typeOf := reflect.TypeOf(&Math{})
+
+		// fmt.Println(
+		// 	"Name: ",
+		// 	typeOf.Name(),
+		// 	Math{},
+		// 	typeOf.NumMethod(),
+		// 	reflect.ValueOf(&Math{}).MethodByName("Add"),
+		// )
+
+		// m := Math{}
+
+		application.Bind("Math2", &Math{})
 	})
 }
 

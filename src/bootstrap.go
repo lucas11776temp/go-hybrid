@@ -46,6 +46,6 @@ func (ctx *Configuration) Bootstrap(setup ApplicationCallback) {
 	window.Destroy()
 }
 
-func (ctx *Application) Bind(name string, obj interface{}) {
-	ctx.Window.Binding(name, obj)
+func (ctx *Application) Bind(name string, object hybrid.BindingArg) error {
+	return ctx.Window.Binding(name, object)
 }
