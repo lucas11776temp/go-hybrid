@@ -44,6 +44,13 @@ func (ctx *Movement) Change(position string) bool {
 	return true
 }
 
+type Bootstrap struct{}
+
+func (ctx *Bootstrap) Boot(application bootstrap.Application) {
+	application.Bind("Math2", &Math{})
+	application.Bind("Movement", &Movement{})
+}
+
 func main() {
 	configuration := bootstrap.Configuration{
 		UI_EMBED:     &ui_embed,
@@ -51,8 +58,5 @@ func main() {
 		DEBUG:        true,
 	}
 
-	configuration.Bootstrap(func(application bootstrap.Application) {
-		application.Bind("Math2", &Math{})
-		application.Bind("Movement", &Movement{})
-	})
+	configuration.Bootstrap(&Bootstrap{})
 }

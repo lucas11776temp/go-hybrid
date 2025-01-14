@@ -23,7 +23,12 @@ type ApplicationCallback func(application Application)
 
 var Instance Application
 
-func (ctx *Configuration) Bootstrap(setup ApplicationCallback) {
+type ApplicationConfiguration interface {
+	Boot(application Application)
+}
+
+// Comment
+func (ctx *Configuration) Bootstrap(config ApplicationConfiguration) {
 	env.LoadDefault()
 
 	configuration := hybrid.Configuration{
@@ -40,13 +45,14 @@ func (ctx *Configuration) Bootstrap(setup ApplicationCallback) {
 			Window: window,
 		}
 
-		setup(Instance)
+		config.Boot(Instance)
 	})
 
 	window.Open()
 	window.Destroy()
 }
 
+// Comment
 func (ctx *Application) Bind(name string, object values.BindingArg) {
 	ctx.Window.Binding(name, object)
 }
