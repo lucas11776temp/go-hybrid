@@ -32,9 +32,11 @@
 # -------------------------------------------------- #
 ## TODO
 # -------------------------------------------------- #
-### Application window error on critical error
-### Implement application Icon feature
+### Write cast package.
+### Application window error on critical error.
+### Implement application Icon feature.
 # __________________________________________________ #
+
 
 
 

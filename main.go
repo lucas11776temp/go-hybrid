@@ -2,7 +2,8 @@ package main
 
 import (
 	"embed"
-	"reflect"
+	"encoding/json"
+	"fmt"
 
 	bootstrap "test/src"
 )
@@ -16,17 +17,32 @@ var ui_embed embed.FS
 type Math struct {
 }
 
-func (ctx *Math) Addition() (int32, int32) {
-	return 2 + 2, 2
+func (ctx *Math) Addition(a int32, b int32) int32 {
+	return a + b
 }
 
-// func (ctx *Math) Multiple() int32 {
-// 	return 2 * 2
-// }
+type Movement struct {
+}
 
-// func (ctx *Math) Sin() float64 {
-// 	return math.Sin(2)
-// }
+type Coordinate struct {
+	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
+}
+
+func (ctx *Movement) Change(position string) bool {
+	var coordinate Coordinate
+
+	err := json.Unmarshal([]byte(position), &coordinate)
+
+	if err != nil {
+		fmt.Println(err, ":", position)
+		return false
+	}
+
+	fmt.Println("Position Change:", coordinate)
+
+	return true
+}
 
 func main() {
 	configuration := bootstrap.Configuration{
@@ -36,45 +52,7 @@ func main() {
 	}
 
 	configuration.Bootstrap(func(application bootstrap.Application) {
-
-		// typeOf := reflect.TypeOf(&Math{})
-
-		// fmt.Println(
-		// 	"Name: ",
-		// 	typeOf.Name(),
-		// 	Math{},
-		// 	typeOf.NumMethod(),
-		// 	reflect.ValueOf(&Math{}).MethodByName("Add"),
-		// )
-
-		// m := Math{}
-
 		application.Bind("Math2", &Math{})
+		application.Bind("Movement", &Movement{})
 	})
 }
-
-type StructMethods map[string]reflect.Value
-
-// func GetStructMethods(s interface{}) StructMethods {
-// 	methods := make(StructMethods)
-
-// 	typeOf := reflect.TypeOf(s)
-
-// 	for i := 0; i < typeOf.NumMethod(); i++ {
-// 		method := typeOf.Method(i)
-
-// 		fmt.Println(
-// 			method.Name, reflect.ValueOf(s).Method(i),
-// 		)
-
-// 		methods[strings.ToUpper(method.Name)] = method.Func
-
-// 		// fmt.Println(method.Func.Call([]reflect.Value{}))
-
-// 		// ctx.bindings[name][method.Name] = reflect.ValueOf(&m).MethodByName(method.Name)
-// 	}
-
-// 	return methods
-// }
-
-// application.Window.Webview.Init(`window.API_ADDRESS="127.0.0.1:9999"`)

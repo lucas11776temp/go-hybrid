@@ -16,19 +16,36 @@ const bind = (object, method) => {
     return binding(JSON.stringify({
       object: object,
       method: method,
-      data: args
+      data: args.map(arg => {
+        if (typeof arg == "object") {
+          try {
+            return JSON.stringify(arg)
+          } catch {
+            return JSON.stringify({})
+          }
+        }
+        return arg
+      })
     }));
   }
 }
 
-
+// Math2 testing object
 const Math2 = {
   addition: bind('Math2', 'Addition'),
-  multiple: bind('Math2', 'Multiple'),
 }
 
+// Movement testing object
+const Movement = {
+  change: bind('Movement', 'Change'),
+}
+
+// Click handler to pass event
 document.addEventListener('click', e => {
-  const p = Math2.addition(1, 2);
+  const p = Movement.change({
+    longitude: Math.random() * 360,
+    latitude: Math.random() * 180
+  });
 
   console.log(p);
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"test/src/hybrid/values"
 
 	webview "github.com/webview/webview_go"
 )
@@ -29,32 +30,18 @@ type HttpServerHandler struct {
 	Embed     *embed.FS
 }
 
-//	type BindingArguments[T any] struct {
-//		Object string `json:"object"`
-//		Method string `json:"method"`
-//		Data   []any      `json:"data"`
-//	}
 type BindingArguments struct {
 	Object string `json:"object"`
 	Method string `json:"method"`
-	// Data   []reflect.Value `json:"data"`
-	Data []any `json:"data"`
+	Data   []any  `json:"data"`
 }
 
-// type Bindings map[string]map[string]func(...[]any)
-
-// type Bindings map[string]map[string]reflect.Value
-
-type BindingArg interface{}
-
 type ObjectBinding struct {
-	Object   BindingArg
-	Bindings map[string]reflect.Method
+	Object   values.BindingArg
+	Bindings values.ObjectMethods
 }
 
 type Bindings map[string]ObjectBinding
-
-// type Bindings map[string]interface{}
 
 type Window struct {
 	Server   Server
@@ -72,6 +59,7 @@ type Configuration struct {
 	Debug     bool
 }
 
+// Comment
 func (ctx *HttpServerHandler) OpenFile(name string) ([]byte, error) {
 	file, err := ctx.Embed.ReadFile(*ctx.EmbedPath + "/" + name)
 
@@ -82,12 +70,14 @@ func (ctx *HttpServerHandler) OpenFile(name string) ([]byte, error) {
 	return file, nil
 }
 
+// Comment
 func isHtml(filename string) bool {
 	split := strings.Split(filename, ".")
 
 	return strings.ToLower(split[len(split)-1]) == "html"
 }
 
+// Comment
 func (h HttpServerHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	fileRequest := strings.Trim(req.URL.Path, "/")
 
@@ -112,6 +102,7 @@ func (h HttpServerHandler) ServeHTTP(res http.ResponseWriter, req *http.Request)
 	res.Write(file)
 }
 
+// Comment
 func (ctx *Server) run() {
 	ctx.Server = &http.Server{
 		Addr: ctx.Address(),
@@ -130,14 +121,17 @@ func (ctx *Server) run() {
 	}()
 }
 
+// Comment
 func (ctx *Server) Address() string {
 	return strings.Join([]string{ctx.IP_Address, "9999"}, ":")
 }
 
+// Comment
 func (ctx *Server) Host() string {
 	return "http://" + ctx.Address()
 }
 
+// Comment
 func Initialization(init Configuration, setup InitializationCallback) Window {
 	window := Window{
 		Server: Server{
@@ -161,81 +155,38 @@ func Initialization(init Configuration, setup InitializationCallback) Window {
 	return window
 }
 
-// Invalid Kind = iota
-// Bool
-// Int
-// Int8
-// Int16
-// Int32
-// Int64
-// Uint
-// Uint8
-// Uint16
-// Uint32
-// Uint64
-// Uintptr
-// Float32
-// Float64
-// Complex64
-// Complex128
-// Array
-// Chan
-// Func
-// Interface
-// Map
-// Pointer
-// Slice
-// String
-// Struct
-// UnsafePointer
-
-func GetValue(value reflect.Value) any {
-	switch value.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return value.Int()
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return value.Uint()
-	case reflect.Float32, reflect.Float64:
-		return value.Float()
-	case reflect.Bool:
-		return value.Bool()
-	default:
-		return value.String()
-	}
-}
-
+// Comment
 func (ctx *Window) setUpBindingEventHandler() {
-	ctx.Webview.Bind("__BINDING__", func(event string) any {
-		// var evt BindingArguments[any]
-		var evt BindingArguments
+	ctx.Webview.Bind("__BINDING__", func(payload string) any {
+		var argument BindingArguments
 
-		err := json.Unmarshal([]byte(event), &evt)
+		err := json.Unmarshal([]byte(payload), &argument)
 
 		if err != nil {
-			fmt.Println("Invalid binding arguments:", event)
+			fmt.Println("Invalid binding arguments:", payload)
 			return nil
 		}
 
-		objMap, ok := ctx.bindings[evt.Object]
+		objMap, ok := ctx.bindings[argument.Object]
 
 		if !ok {
-			fmt.Println("Binding to object", evt.Object, "does not exist")
+			fmt.Println("Binding to object", argument.Object, "does not exist")
 			return nil
 		}
 
-		m := objMap.Bindings[evt.Method]
+		method := objMap.Bindings[argument.Method]
 
-		re := m.Func.Call([]reflect.Value{
-			reflect.ValueOf(objMap.Object),
-		})
+		args := []reflect.Value{reflect.ValueOf(objMap.Object)}
+
+		args = append(args, values.Arguments(method, argument.Data)...)
+
+		returnValues := method.Func.Call(args)
 
 		vs := []any{}
 
-		for i := 0; i < len(re); i++ {
-			vs = append(vs, GetValue(re[i]))
+		for i := 0; i < len(returnValues); i++ {
+			vs = append(vs, values.GetValue(returnValues[i]))
 		}
-
-		fmt.Println("Return Values", vs)
 
 		if len(vs) > 1 {
 			return vs
@@ -245,26 +196,21 @@ func (ctx *Window) setUpBindingEventHandler() {
 	})
 }
 
-func (ctx *Window) Binding(name string, obj BindingArg) {
+// Comment
+func (ctx *Window) Binding(name string, obj values.BindingArg) {
 	ctx.bindings[name] = ObjectBinding{
 		Object:   obj,
-		Bindings: make(map[string]reflect.Method),
-	}
-
-	typeOf := reflect.TypeOf(obj)
-
-	for i := 0; i < typeOf.NumMethod(); i++ {
-		if typeOf.Method(i).Type.Kind() == reflect.Func {
-			ctx.bindings[name].Bindings[typeOf.Method(i).Name] = typeOf.Method(i)
-		}
+		Bindings: values.Methods(obj),
 	}
 }
 
+// Comment
 func (ctx *Window) Open() {
 	ctx.Webview.Navigate(ctx.Server.Host())
 	ctx.Webview.Run()
 }
 
+// Comment
 func (ctx *Window) Destroy() {
 	ctx.Webview.Destroy()
 }

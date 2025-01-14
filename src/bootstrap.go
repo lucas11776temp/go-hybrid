@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"embed"
 	"test/src/hybrid"
+	"test/src/hybrid/values"
 	"test/src/tools/env"
 )
 
@@ -46,6 +47,6 @@ func (ctx *Configuration) Bootstrap(setup ApplicationCallback) {
 	window.Destroy()
 }
 
-func (ctx *Application) Bind(name string, object hybrid.BindingArg) {
+func (ctx *Application) Bind(name string, object values.BindingArg) {
 	ctx.Window.Binding(name, object)
 }
